@@ -8,6 +8,7 @@ use Filament\Resources\Pages\ViewRecord;
 use Filament\Infolists;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\SpatieMediaLibraryImageEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Illuminate\Support\Facades\Session;
 
@@ -28,12 +29,20 @@ class ViewOrder extends ViewRecord
                     $isVisible = !Session::get('invoice_image_visible', false);
                     Session::put('invoice_image_visible', $isVisible);
                 }),
+            Actions\Action::make('toggle_note_image')
+                ->label('Check Note')
+                ->action(function () {
+                    // Toggle visibility by setting a session variable
+                    $isVisible = !Session::get('note_image_visible', false);
+                    Session::put('note_image_visible', $isVisible);
+                }),
         ];
     }
 
     public function infolist(Infolist $infolist): Infolist
     {
         $isViewingInvoiceImage = Session::get('invoice_image_visible', false);
+        $isViewingNoteImage = Session::get('note_image_visible', false);
 
         return $infolist
             ->schema([
@@ -69,6 +78,16 @@ class ViewOrder extends ViewRecord
                                     ->dateTime(),
                             ]),
                     ]),
+                Infolists\Components\Section::make('Note Image')
+                    ->schema([
+                        TextEntry::make('note'),
+                        SpatieMediaLibraryImageEntry::make('note_img')
+                            ->label('Note Image')
+                            ->collection('image')
+                            ->width('100%')
+                            ->height('auto')
+                    ])
+                    ->visible($isViewingNoteImage),
                 Infolists\Components\Section::make('Invoice Image')
                     ->schema([
                         SpatieMediaLibraryImageEntry::make('image')

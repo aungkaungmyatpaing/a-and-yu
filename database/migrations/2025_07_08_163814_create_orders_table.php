@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('invoice_number')->unique();
             $table->boolean('delivered')->default(false);
             $table->integer('total_amount')->default(0);
+            $table->text('note')->nullable();
             $table->timestamps();
         });
     }

@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Product;
 use Filament\Forms;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -99,8 +100,18 @@ class OrderResource extends Resource
                                 Forms\Components\Toggle::make('delivered')
                                     ->label('Delivered')
                                     ->default(false),
+                                Textarea::make('note')
+                                    ->nullable()
+                                    ->hint('Optional')
+                                    ->columnSpanFull(),
                                 SpatieMediaLibraryFileUpload::make('image')
                                     ->label('Invoice')
+                                    ->collection('image')
+                                    ->conversion('thumb')
+                                    ->nullable()
+                                    ->columnSpanFull(),
+                                SpatieMediaLibraryFileUpload::make('note_img')
+                                    ->label('Note Image')
                                     ->collection('image')
                                     ->conversion('thumb')
                                     ->nullable()
@@ -141,6 +152,7 @@ class OrderResource extends Resource
                                                     ->default(now()),
                                                 SpatieMediaLibraryFileUpload::make('image')
                                                     ->collection('image')
+                                                    ->multiple()
                                                     ->conversion('thumb')
                                                     ->nullable()
                                             ]),
@@ -208,6 +220,11 @@ class OrderResource extends Resource
                         ->searchable()
                         ->sortable()
                         ->placeholder('No customer'),
+                    Tables\Columns\TextColumn::make('user.school_name')
+                        ->label('School')
+                        ->searchable()
+                        ->sortable()
+                        ->placeholder('No Shcool'),
 
                     Tables\Columns\TextColumn::make('order_items_count')
                         ->label('Items')

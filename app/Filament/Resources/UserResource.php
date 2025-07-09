@@ -38,6 +38,10 @@ class UserResource extends Resource
                     ->nullable()
                     ->hint('Optional')
                     ->maxLength(255),
+                TextInput::make('school_name')
+                    ->nullable()
+                    ->hint('Optional')
+                    ->maxLength(255),
                 TextInput::make('email')
                     ->nullable()
                     ->email()

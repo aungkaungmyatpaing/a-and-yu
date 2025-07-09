@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('school_name')->nullable();
+            $table->string('facebook_name')->nullable();
             $table->string('email')->nullable()->unique();
             $table->string('phone')->nullable()->unique();
             $table->text('address')->nullable();

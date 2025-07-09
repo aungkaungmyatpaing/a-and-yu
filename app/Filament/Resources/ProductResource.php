@@ -58,6 +58,7 @@ class ProductResource extends Resource
                         ->collection('image')
                         ->conversion('thumb')
                         ->nullable()
+                        ->multiple()
                         ->columnSpanFull(),
             ]);
     }

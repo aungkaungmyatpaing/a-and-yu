@@ -5,6 +5,8 @@ namespace App\Filament\Resources\UserResource\RelationManagers;
 use App\Models\Order;
 use App\Models\Product;
 use Filament\Forms;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
@@ -38,10 +40,32 @@ class OrdersRelationManager extends RelationManager
                                     ->default(function () {
                                         return 'INV-' . now()->format('Ymd') . '-' . str_pad(Order::count() + 1, 4, '0', STR_PAD_LEFT);
                                     }),
-
+                                Forms\Components\TextInput::make('total_amount')
+                                    ->label('Total Amount')
+                                    ->nullable()
+                                    ->suffix(' mmk')
+                                    ->hint('Optional')
+                                    ->numeric()
+                                    ->default(0),
                                 Forms\Components\Toggle::make('delivered')
                                     ->label('Delivered')
                                     ->default(false),
+                                Textarea::make('note')
+                                    ->nullable()
+                                    ->hint('Optional')
+                                    ->columnSpanFull(),
+                                SpatieMediaLibraryFileUpload::make('note_img')
+                                    ->label('Note Image')
+                                    ->collection('image')
+                                    ->conversion('thumb')
+                                    ->nullable()
+                                    ->columnSpanFull(),
+                                SpatieMediaLibraryFileUpload::make('image')
+                                    ->label('Invoice')
+                                    ->collection('image')
+                                    ->conversion('thumb')
+                                    ->nullable()
+                                    ->columnSpanFull(),
                             ]),
                     ]),
 

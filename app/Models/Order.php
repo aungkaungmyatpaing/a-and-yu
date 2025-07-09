@@ -17,7 +17,8 @@ class Order extends Model implements HasMedia
         'user_id',
         'invoice_number',
         'delivered',
-        'total_amount'
+        'total_amount',
+        'note'
     ];
 
     protected $casts = [
@@ -27,6 +28,24 @@ class Order extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('image')
+            ->useFallbackUrl(asset('/assets/images/default.png'))
+            ->acceptsFile(function (File $file) {
+                $allowedMimeTypes = [
+                    'image/jpeg',
+                    'image/jpg',
+                    'image/png',
+                    'image/webp',
+                ];
+                return in_array($file->mimeType, $allowedMimeTypes);
+            })
+            ->registerMediaConversions(function (Media $media) {
+                $this
+                    ->addMediaConversion('thumb')
+                    ->width(100)
+                    ->height(100);
+            });
+
+         $this->addMediaCollection('note_img')
             ->useFallbackUrl(asset('/assets/images/default.png'))
             ->acceptsFile(function (File $file) {
                 $allowedMimeTypes = [

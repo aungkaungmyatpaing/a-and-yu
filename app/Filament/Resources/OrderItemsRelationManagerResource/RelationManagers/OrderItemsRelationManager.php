@@ -50,6 +50,7 @@ class OrderItemsRelationManager extends RelationManager
                                     ->default(now()),
                                 SpatieMediaLibraryFileUpload::make('image')
                                     ->collection('image')
+                                    ->multiple()
                                     ->conversion('thumb')
                                     ->nullable()
                             ]),
