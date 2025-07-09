@@ -1,0 +1,177 @@
+<?php
+
+namespace App\Filament\Resources\UserResource\RelationManagers;
+
+use App\Models\Order;
+use App\Models\Product;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+
+class OrdersRelationManager extends RelationManager
+{
+    protected static string $relationship = 'orders';
+
+    public function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+               Forms\Components\Section::make('Order Information')
+                    ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\DatePicker::make('date')
+                                    ->label('Order Date')
+                                    ->required()
+                                    ->default(now())
+                                    ->displayFormat('Y-m-d'),
+
+                                Forms\Components\TextInput::make('invoice_number')
+                                    ->label('Invoice Number')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->unique(ignoreRecord: true)
+                                    ->default(function () {
+                                        return 'INV-' . now()->format('Ymd') . '-' . str_pad(Order::count() + 1, 4, '0', STR_PAD_LEFT);
+                                    }),
+
+                                Forms\Components\Toggle::make('delivered')
+                                    ->label('Delivered')
+                                    ->default(false),
+                            ]),
+                    ]),
+
+                Forms\Components\Section::make('Order Items')
+                    ->schema([
+                        Forms\Components\Repeater::make('orderItems')
+                            ->relationship()
+                            ->schema([
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\Select::make('product_id')
+                                            ->label('Product')
+                                            ->relationship('product', 'name')
+                                            ->searchable()
+                                            ->preload()
+                                            ->required()
+                                            ->getOptionLabelFromRecordUsing(fn (Product $record): string => "{$record->name} - {$record->design}"),
+
+                                        Forms\Components\TextInput::make('qty')
+                                            ->label('Quantity')
+                                            ->numeric()
+                                            ->required()
+                                            ->default(1)
+                                            ->minValue(1)
+                                            ->step(1),
+                                    ]),
+                            ])
+                            ->collapsible()
+                            ->cloneable()
+                            ->deletable()
+                            ->addActionLabel('Add Item')
+                            ->defaultItems(1)
+                            ->minItems(1),
+                    ]),
+            ]);
+    }
+
+    public function table(Table $table): Table
+    {
+        return $table
+            ->recordTitleAttribute('invoice_number')
+            ->columns([
+                Tables\Columns\TextColumn::make('invoice_number')
+                    ->label('Invoice #')
+                    ->searchable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('date')
+                    ->label('Order Date')
+                    ->date()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('orderItems_count')
+                    ->label('Items')
+                    ->getStateUsing(function ($record) {
+                            // Count the related orderItems for each Order
+                            return $record->orderItems()->count();
+                        })
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('total_quantity')
+                    ->label('Total Qty')
+                    ->getStateUsing(function (Order $record) {
+                        return $record->orderItems->sum('qty');
+                    })
+                    ->sortable(false),
+
+                Tables\Columns\IconColumn::make('delivered')
+                    ->boolean()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Created')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                Tables\Filters\TernaryFilter::make('delivered')
+                    ->label('Delivery Status')
+                    ->boolean()
+                    ->trueLabel('Delivered')
+                    ->falseLabel('Not Delivered')
+                    ->native(false),
+
+                Tables\Filters\Filter::make('date')
+                    ->form([
+                        Forms\Components\DatePicker::make('date_from')
+                            ->label('From Date'),
+                        Forms\Components\DatePicker::make('date_to')
+                            ->label('To Date'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['date_from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('date', '>=', $date),
+                            )
+                            ->when(
+                                $data['date_to'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('date', '<=', $date),
+                            );
+                    }),
+            ])
+            ->headerActions([
+                Tables\Actions\CreateAction::make(),
+            ])
+            ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->url(fn (Order $record): string => route('filament.admin.resources.orders.view', $record)),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\Action::make('toggle_delivered')
+                    ->label(fn (Order $record) => $record->delivered ? 'Mark as Not Delivered' : 'Mark as Delivered')
+                    ->icon(fn (Order $record) => $record->delivered ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                    ->color(fn (Order $record) => $record->delivered ? 'danger' : 'success')
+                    ->action(fn (Order $record) => $record->update(['delivered' => !$record->delivered]))
+                    ->requiresConfirmation(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\BulkAction::make('mark_delivered')
+                        ->label('Mark as Delivered')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->action(fn ($records) => $records->each(fn ($record) => $record->update(['delivered' => true])))
+                        ->requiresConfirmation(),
+                ]),
+            ])
+            ->defaultSort('created_at', 'desc');
+    }
+}
