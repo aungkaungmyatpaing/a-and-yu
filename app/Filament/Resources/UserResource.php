@@ -34,6 +34,10 @@ class UserResource extends Resource
                     ->label('Customer')
                     ->required()
                     ->maxLength(255),
+                TextInput::make('school_name')
+                    ->nullable()
+                    ->hint('Optional')
+                    ->maxLength(255),
                 TextInput::make('email')
                     ->nullable()
                     ->email()
@@ -77,7 +81,11 @@ class UserResource extends Resource
                     ->limit(1)
                     ->size(80)
                     ->toggleable(),
-                TextColumn::make('name'),
+                TextColumn::make('name')
+                    ->searchable(),
+                TextColumn::make('school_name')
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('email')
                     ->toggleable(),
                 TextColumn::make('phone')

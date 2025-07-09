@@ -45,6 +45,10 @@ class OrderResource extends Resource
                                         Forms\Components\TextInput::make('name')
                                             ->required()
                                             ->maxLength(255),
+                                        Forms\Components\TextInput::make('school_name')
+                                            ->nullable()
+                                            ->hint('Optional')
+                                            ->maxLength(255),
                                            Forms\Components\TextInput::make('email')
                                                 ->nullable()
                                                 ->email()
