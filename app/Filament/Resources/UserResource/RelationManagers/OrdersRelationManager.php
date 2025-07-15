@@ -31,7 +31,10 @@ class OrdersRelationManager extends RelationManager
                                     ->required()
                                     ->default(now())
                                     ->displayFormat('Y-m-d'),
-
+                                Forms\Components\DatePicker::make('end_date')
+                                    ->label('Order End Date')
+                                    ->nullable()
+                                    ->displayFormat('Y-m-d'),
                                 Forms\Components\TextInput::make('invoice_number')
                                     ->label('Invoice Number')
                                     ->required()
@@ -56,7 +59,7 @@ class OrdersRelationManager extends RelationManager
                                     ->columnSpanFull(),
                                 SpatieMediaLibraryFileUpload::make('note_img')
                                     ->label('Note Image')
-                                    ->collection('image')
+                                    ->collection('note_img')
                                     ->conversion('thumb')
                                     ->nullable()
                                     ->columnSpanFull(),
@@ -117,7 +120,12 @@ class OrdersRelationManager extends RelationManager
                     ->label('Order Date')
                     ->date()
                     ->sortable(),
-
+                Tables\Columns\TextColumn::make('end_date')
+                    ->label('Order End Date')
+                    ->date()
+                    ->toggleable()
+                    ->placeholder('No End Date')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('orderItems_count')
                     ->label('Items')
                     ->getStateUsing(function ($record) {
@@ -167,6 +175,25 @@ class OrdersRelationManager extends RelationManager
                             ->when(
                                 $data['date_to'],
                                 fn (Builder $query, $date): Builder => $query->whereDate('date', '<=', $date),
+                            );
+                    }),
+
+                Tables\Filters\Filter::make('end_date')
+                    ->form([
+                        Forms\Components\DatePicker::make('date_from')
+                            ->label('From End Date'),
+                        Forms\Components\DatePicker::make('date_to')
+                            ->label('To End Date'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['date_from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('end_date', '>=', $date),
+                            )
+                            ->when(
+                                $data['date_to'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('end_date', '<=', $date),
                             );
                     }),
             ])

@@ -52,16 +52,17 @@ class UserResource extends Resource
                     ->tel()
                     ->nullable()
                     ->hint('Optional')
-                    ->unique(ignoreRecord: true)
-                    ->rule(function () {
-                        return function ($attribute, $value, $fail) {
-                            if ((str_starts_with($value, '095') || str_starts_with($value, '094')) && strlen($value) !== 9) {
-                                $fail($attribute . ' must be 9 characters long if it starts with "095" or "094".');
-                            } elseif (!str_starts_with($value, '095') && !str_starts_with($value, '094') &&  strlen($value) !== 11) {
-                                $fail($attribute . ' must be 11 characters long if it does not start with "095" or "094".');
-                            }
-                        };
-                    }),
+                    ->unique(ignoreRecord: true),
+                TextInput::make('phone_2')
+                    ->tel()
+                    ->nullable()
+                    ->hint('Optional')
+                    ->unique(ignoreRecord: true),
+                TextInput::make('phone_3')
+                    ->tel()
+                    ->nullable()
+                    ->hint('Optional')
+                    ->unique(ignoreRecord: true),
                 TextInput::make('address')
                     ->nullable()
                     ->hint('Optional'),
@@ -93,7 +94,17 @@ class UserResource extends Resource
                 TextColumn::make('email')
                     ->toggleable(),
                 TextColumn::make('phone')
-                    ->toggleable(),
+                    ->toggleable()
+                    ->searchable()
+                    ->placeholder('No customer phone'),
+                TextColumn::make('phone_2')
+                    ->toggleable()
+                    ->searchable()
+                    ->placeholder('No customer phone 2'),
+                TextColumn::make('phone_3')
+                    ->toggleable()
+                    ->searchable()
+                    ->placeholder('No customer phone 3'),
                 TextColumn::make('created_at')
                     ->dateTime('M d, Y')
                     ->sortable()

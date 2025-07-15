@@ -14,6 +14,7 @@ class Order extends Model implements HasMedia
 
     protected $fillable = [
         'date',
+        'end_date',
         'user_id',
         'invoice_number',
         'delivered',

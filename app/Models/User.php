@@ -27,6 +27,8 @@ class User extends Authenticatable implements HasMedia
         'facebook_name',
         'email',
         'phone',
+        'phone_2',
+        'phone_3',
         'address',
         'password',
     ];

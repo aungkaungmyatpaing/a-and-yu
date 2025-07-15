@@ -36,7 +36,10 @@ class OrderResource extends Resource
                                     ->required()
                                     ->default(now())
                                     ->displayFormat('Y-m-d'),
-
+                                Forms\Components\DatePicker::make('end_date')
+                                    ->label('Order End Date')
+                                    ->nullable()
+                                    ->displayFormat('Y-m-d'),
                                 Forms\Components\Select::make('user_id')
                                     ->label('Customer')
                                     ->relationship('user', 'name')
@@ -60,16 +63,17 @@ class OrderResource extends Resource
                                                 ->tel()
                                                 ->nullable()
                                                 ->hint('Optional')
-                                                ->unique(ignoreRecord: true)
-                                                ->rule(function () {
-                                                    return function ($attribute, $value, $fail) {
-                                                        if ((str_starts_with($value, '095') || str_starts_with($value, '094')) && strlen($value) !== 9) {
-                                                            $fail($attribute . ' must be 9 characters long if it starts with "095" or "094".');
-                                                        } elseif (!str_starts_with($value, '095') && !str_starts_with($value, '094') &&  strlen($value) !== 11) {
-                                                            $fail($attribute . ' must be 11 characters long if it does not start with "095" or "094".');
-                                                        }
-                                                    };
-                                                }),
+                                                ->unique(ignoreRecord: true),
+                                            Forms\Components\TextInput::make('phone_2')
+                                                ->tel()
+                                                ->nullable()
+                                                ->hint('Optional')
+                                                ->unique(ignoreRecord: true),
+                                            Forms\Components\TextInput::make('phone_3')
+                                                ->tel()
+                                                ->nullable()
+                                                ->hint('Optional')
+                                                ->unique(ignoreRecord: true),
                                             Forms\Components\TextInput::make('address')
                                                 ->nullable()
                                                 ->hint('Optional'),
@@ -104,18 +108,18 @@ class OrderResource extends Resource
                                     ->nullable()
                                     ->hint('Optional')
                                     ->columnSpanFull(),
+                                SpatieMediaLibraryFileUpload::make('note_img')
+                                    ->label('Note Image')
+                                    ->collection('note_img')
+                                    ->conversion('thumb')
+                                    ->nullable()
+                                    ->columnSpanFull(),
                                 SpatieMediaLibraryFileUpload::make('image')
                                     ->label('Invoice')
                                     ->collection('image')
                                     ->conversion('thumb')
                                     ->nullable()
-                                    ->columnSpanFull(),
-                                SpatieMediaLibraryFileUpload::make('note_img')
-                                    ->label('Note Image')
-                                    ->collection('image')
-                                    ->conversion('thumb')
-                                    ->nullable()
-                                    ->columnSpanFull(),
+                                    ->columnSpanFull(),     
                         ]),
                     ]),
 
@@ -215,11 +219,36 @@ class OrderResource extends Resource
                         ->date()
                         ->sortable(),
 
+                    Tables\Columns\TextColumn::make('end_date')
+                        ->label('Order End Date')
+                        ->date()
+                        ->toggleable()
+                        ->placeholder('No End Date')
+                        ->sortable(),
+
                     Tables\Columns\TextColumn::make('user.name')
                         ->label('Customer')
                         ->searchable()
                         ->sortable()
                         ->placeholder('No customer'),
+                    Tables\Columns\TextColumn::make('user.phone')
+                        ->label('Phone')
+                        ->searchable()
+                        ->sortable()
+                        ->toggleable()
+                        ->placeholder('No customer phone'),
+                    Tables\Columns\TextColumn::make('user.phone_2')
+                        ->label('Phone 2')
+                        ->searchable()
+                        ->sortable()
+                        ->toggleable()
+                        ->placeholder('No customer phone 2'),
+                    Tables\Columns\TextColumn::make('user.phone_3')
+                        ->label('Phone 3')
+                        ->searchable()
+                        ->sortable()
+                        ->toggleable()
+                        ->placeholder('No customer phone 3'),
                     Tables\Columns\TextColumn::make('user.school_name')
                         ->label('School')
                         ->searchable()
@@ -285,6 +314,25 @@ class OrderResource extends Resource
                             ->when(
                                 $data['date_to'],
                                 fn (Builder $query, $date): Builder => $query->whereDate('date', '<=', $date),
+                            );
+                    }),
+
+                Tables\Filters\Filter::make('end_date')
+                    ->form([
+                        Forms\Components\DatePicker::make('date_from')
+                            ->label('From End Date'),
+                        Forms\Components\DatePicker::make('date_to')
+                            ->label('To End Date'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['date_from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('end_date', '>=', $date),
+                            )
+                            ->when(
+                                $data['date_to'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('end_date', '<=', $date),
                             );
                     }),
 

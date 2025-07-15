@@ -55,13 +55,6 @@ class ViewOrder extends ViewRecord
                                     ->badge()
                                     ->color('primary'),
 
-                                Infolists\Components\TextEntry::make('date')
-                                    ->label('Order Date')
-                                    ->date(),
-
-                                Infolists\Components\TextEntry::make('user.name')
-                                    ->label('Customer')
-                                    ->placeholder('No customer assigned'),
 
                                 Infolists\Components\IconEntry::make('delivered')
                                     ->boolean()
@@ -69,6 +62,28 @@ class ViewOrder extends ViewRecord
                                     ->falseIcon('heroicon-o-x-circle')
                                     ->trueColor('success')
                                     ->falseColor('danger'),
+
+                                Infolists\Components\TextEntry::make('date')
+                                    ->label('Order Date')
+                                    ->date(),
+
+                                Infolists\Components\TextEntry::make('end_date')
+                                    ->label('Order End Date')
+                                    ->placeholder('No End Date')
+                                    ->date(),
+
+                                Infolists\Components\TextEntry::make('user.name')
+                                    ->label('Customer')
+                                    ->placeholder('No customer assigned'),
+                                    
+                               Infolists\Components\TextEntry::make('user.phones')
+                                    ->label('Customer Phones')
+                                    ->default(fn ($record) => collect([
+                                        $record->user?->phone,
+                                        $record->user?->phone_2,
+                                        $record->user?->phone_3,
+                                    ])->filter()->implode(', '))
+                                    ->placeholder('No customer phones'),
 
                                 Infolists\Components\TextEntry::make('total_amount')
                                     ->suffix(' mmk'),
