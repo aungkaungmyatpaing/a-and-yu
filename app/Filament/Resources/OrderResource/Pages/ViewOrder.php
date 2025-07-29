@@ -22,6 +22,12 @@ class ViewOrder extends ViewRecord
         return [
             Actions\EditAction::make(),
             Actions\DeleteAction::make(),
+            Actions\Action::make('print_invoice')
+                ->label('Print Invoice')
+                ->icon('heroicon-o-printer')
+                ->url(fn ($record) => route('orders.invoice', $record))
+                ->openUrlInNewTab(),
+
             Actions\Action::make('toggle_invoice_image')
                 ->label('Invoice Image')
                 ->action(function () {
@@ -62,6 +68,69 @@ class ViewOrder extends ViewRecord
                                     ->falseIcon('heroicon-o-x-circle')
                                     ->trueColor('success')
                                     ->falseColor('danger'),
+
+                                Infolists\Components\TextEntry::make('progress_percent')
+                                    ->label('Progress %')
+                                    ->default(function ($record) {
+                                        // Calculate progress percent in the view
+                                        if ($record->delivered) {
+                                            return '100%';
+                                        }
+
+                                        if (!$record->date || !$record->progress_day) {
+                                            return 'N/A';
+                                        }
+
+                                        $start = \Carbon\Carbon::parse($record->date);
+                                        $now = \Carbon\Carbon::now();
+
+                                        $daysPassed = $start->diffInDays($now);
+                                        $percent = min(round(($daysPassed / $record->progress_day) * 100), 100);
+
+                                        return $percent . '%';
+                                    })
+                                    ->badge()
+                                    ->color('primary'),
+
+                                Infolists\Components\TextEntry::make('progress_stage')
+                                    ->label('Progress Stage')
+                                    ->default(function ($record) {
+                                        if ($record->delivered) {
+                                            return 'Delivery';
+                                        }
+
+                                        if (!$record->date || !$record->progress_day) {
+                                            return 'Not Started';
+                                        }
+
+                                        $start = \Carbon\Carbon::parse($record->date);
+                                        $now = \Carbon\Carbon::now();
+
+                                        $daysPassed = $start->diffInDays($now);
+                                        $percent = min(round(($daysPassed / $record->progress_day) * 100), 100);
+
+                                        return match (true) {
+                                            $percent < 10 => 'Pending',
+                                            $percent < 20 => 'Order Confirmed',
+                                            $percent < 30 => 'Fabric Purchased',
+                                            $percent < 40 => 'Cutting',
+                                            $percent < 50 => 'Collar Attached',
+                                            $percent < 60 => 'Threading Completed',
+                                            $percent < 70 => 'Sewing in Progress',
+                                            $percent < 80 => 'Washing Done',
+                                            $percent < 90 => 'Buttonhole + Ironing',
+                                            $percent < 100 => 'Parking + Order Check',
+                                            default => 'Delivery',
+                                        };
+                                    })
+                                    ->badge()
+                                    ->color('success'),
+
+                                Infolists\Components\TextEntry::make('progress_day')
+                                    ->suffix( ' Days')
+                                    ->numeric()
+                                    ->badge()
+                                    ->color('primary'),
 
                                 Infolists\Components\TextEntry::make('date')
                                     ->label('Order Date')

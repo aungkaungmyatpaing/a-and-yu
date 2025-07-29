@@ -8,6 +8,7 @@ use Filament\Forms;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -26,6 +27,13 @@ class OrdersRelationManager extends RelationManager
                     ->schema([
                         Forms\Components\Grid::make(2)
                             ->schema([
+                                Forms\Components\TextInput::make('progress_day')
+                                    ->label('Progress Days')
+                                    ->numeric()
+                                    ->default(30)
+                                    ->suffix( 'Days')
+                                    ->nullable()
+                                    ->hint('Number of days expected to complete'),
                                 Forms\Components\DatePicker::make('date')
                                     ->label('Order Date')
                                     ->required()
@@ -116,6 +124,63 @@ class OrdersRelationManager extends RelationManager
                     ->searchable()
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('progress_percent')
+                    ->label('Progress %')
+                    ->getStateUsing(function (Order $record) {
+                        // If the order is delivered, set progress to 100%
+                        if ($record->delivered) {
+                            return '100%';
+                        }
+
+                        // If there is no start date or progress day, return 'N/A'
+                        if (!$record->date || !$record->progress_day) {
+                            return 'N/A';
+                        }
+
+                        // Calculate the progress
+                        $start = \Carbon\Carbon::parse($record->date);
+                        $now = \Carbon\Carbon::now();
+
+                        $daysPassed = $start->diffInDays($now);
+                        $percent = min(round(($daysPassed / $record->progress_day) * 100), 100);
+
+                        return $percent . '%';
+                    })
+                    ->toggleable(),
+                    
+                Tables\Columns\TextColumn::make('progress_stage')
+                    ->label('Progress Stage')
+                    ->getStateUsing(function (Order $record) {
+                        if ($record->delivered) {
+                            return 'Delivery';
+                        }
+
+                        if (!$record->date || !$record->progress_day) {
+                            return 'Not Started';
+                        }
+
+                        $start = \Carbon\Carbon::parse($record->date);
+                        $now = \Carbon\Carbon::now();
+
+                        $daysPassed = $start->diffInDays($now);
+                        $percent = min(round(($daysPassed / $record->progress_day) * 100), 100);
+
+                        return match (true) {
+                            $percent < 10 => 'Pending',
+                            $percent < 20 => 'Order Confirmed',
+                            $percent < 30 => 'Fabric Purchased',
+                            $percent < 40 => 'Cutting',
+                            $percent < 50 => 'Collar Attached',
+                            $percent < 60 => 'Threading Completed',
+                            $percent < 70 => 'Sewing in Progress',
+                            $percent < 80 => 'Washing Done',
+                            $percent < 90 => 'Buttonhole + Ironing',
+                            $percent < 100 => 'Parking + Order Check',
+                            default => 'Delivery',
+                        };
+                    })
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('date')
                     ->label('Order Date')
                     ->date()
@@ -126,6 +191,21 @@ class OrdersRelationManager extends RelationManager
                     ->toggleable()
                     ->placeholder('No End Date')
                     ->sortable(),
+                Tables\Columns\TextInputColumn::make('progress_day')
+                        ->label('Progress Days')
+                        ->type('number')
+                        ->rules(['required', 'integer', 'min:1'])
+                        ->sortable()
+                        ->beforeStateUpdated(function ($record, $state) {
+                            // Optional: Add validation or logging here
+                        })
+                        ->afterStateUpdated(function ($record, $state) {
+                            Notification::make()
+                                ->title('Progress Days Updated')
+                                ->body("Progress days updated to {$state} days for order {$record->invoice_number}")
+                                ->success()
+                                ->send();
+                        }),
                 Tables\Columns\TextColumn::make('orderItems_count')
                     ->label('Items')
                     ->getStateUsing(function ($record) {
